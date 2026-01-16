@@ -141,38 +141,40 @@ locals {
     ] : []
   )
 
-  # Normalize all statements to have consistent structure
-  # Always include Condition field (empty object if no conditions)
-  policy_statements = [
-    for stmt in local.policy_statements_raw : {
+  # First pass: create statements WITH Condition (only if Condition is not empty)
+  policy_statements_with_condition = [
+    for stmt in local.policy_statements_raw :
+    {
       Sid       = stmt.Sid
       Effect    = stmt.Effect
       Action    = stmt.Action
       Resource  = stmt.Resource
       Condition = stmt.Condition
     }
+    if length(keys(stmt.Condition)) > 0
   ]
 
-  # Filter out statements with empty Conditions for the final policy
-  policy_statements_final = [
-    for stmt in local.policy_statements :
-    length(keys(stmt.Condition)) > 0 ? {
-      Sid       = stmt.Sid
-      Effect    = stmt.Effect
-      Action    = stmt.Action
-      Resource  = stmt.Resource
-      Condition = stmt.Condition
-    } : {
+  # Second pass: create statements WITHOUT Condition (only if Condition is empty)
+  policy_statements_without_condition = [
+    for stmt in local.policy_statements_raw :
+    {
       Sid      = stmt.Sid
       Effect   = stmt.Effect
       Action   = stmt.Action
       Resource = stmt.Resource
     }
+    if length(keys(stmt.Condition)) == 0
   ]
+
+  # Combine both lists
+  policy_statements = concat(
+    local.policy_statements_with_condition,
+    local.policy_statements_without_condition
+  )
 
   # Build the final policy document
   policy_document = {
     Version   = "2012-10-17"
-    Statement = local.policy_statements_final
+    Statement = local.policy_statements
   }
 }
