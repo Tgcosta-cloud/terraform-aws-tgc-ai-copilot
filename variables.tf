@@ -1,3 +1,13 @@
+variable "aws_account_id" {
+  type = string
+}
+
+variable "aws_region" {
+  description = "AWS region"
+  type        = string
+  default     = "us-east-1"
+}
+
 variable "ai_copilot_policy_name" {
   description = "Name of the SCP policy"
   type        = string
