@@ -39,7 +39,7 @@ locals {
           "ec2:DisassociateAddress"
         ]
         Resource   = "*"
-        Condition  = local.has_enforce_roles ? local.role_condition : {}
+        Condition  = local.role_condition
       },
       {
         Sid      = "DenyAllocateAndReleaseElasticIp"
@@ -49,7 +49,7 @@ locals {
           "ec2:ReleaseAddress"
         ]
         Resource   = "*"
-        Condition  = local.has_enforce_roles ? local.role_condition : {}
+        Condition  = local.role_condition
       }
     ] : [],
 
@@ -136,16 +136,20 @@ locals {
           "s3:PutAccountPublicAccessBlock"
         ]
         Resource   = "*"
-        Condition  = local.has_enforce_roles ? local.role_condition : {}
+        Condition  = local.role_condition
       }
     ] : []
   )
 
-  # Remove empty Conditions from statements (when role_condition is empty)
+  # Remove empty Conditions from statements
+  # Only remove Condition key if it's an empty object
   policy_statements_cleaned = [
     for statement in local.policy_statements : 
-    length(keys(statement.Condition)) > 0 ? statement : {
-      for k, v in statement : k => v if k != "Condition"
+    length(lookup(statement, "Condition", {})) > 0 ? statement : {
+      Sid      = statement.Sid
+      Effect   = statement.Effect
+      Action   = statement.Action
+      Resource = statement.Resource
     }
   ]
 
