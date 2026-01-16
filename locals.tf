@@ -141,14 +141,19 @@ locals {
     ] : []
   )
 
-  # Remove empty Conditions from statements
-  # This ensures consistent types across all statements
+  # Remove empty Conditions and ensure type consistency
   policy_statements = [
     for stmt in local.policy_statements_raw :
-    length(keys(stmt.Condition)) > 0 ? stmt : {
+    length(keys(stmt.Condition)) > 0 ? {
+      Sid       = stmt.Sid
+      Effect    = stmt.Effect
+      Action    = tolist(stmt.Action)
+      Resource  = stmt.Resource
+      Condition = stmt.Condition
+    } : {
       Sid      = stmt.Sid
       Effect   = stmt.Effect
-      Action   = stmt.Action
+      Action   = tolist(stmt.Action)
       Resource = stmt.Resource
     }
   ]
