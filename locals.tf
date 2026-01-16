@@ -12,12 +12,12 @@ locals {
   } : {}
 
   # Build statements list dynamically based on enabled controls
-  policy_statements = concat(
+  policy_statements_raw = concat(
     var.ai_copilot_deny_ec2_public_ip ? [
       {
         Sid      = "DenyEC2LaunchWithPublicIPv4"
         Effect   = "Deny"
-        Action   = "ec2:RunInstances"
+        Action   = ["ec2:RunInstances"]
         Resource = "*"
         Condition = merge(
           {
@@ -141,20 +141,21 @@ locals {
     ] : []
   )
 
-  # Remove empty Conditions and ensure consistent types
-  policy_statements_cleaned = [
-    for statement in local.policy_statements :
-    length(statement.Condition) > 0 ? statement : {
-      Sid      = statement.Sid
-      Effect   = statement.Effect
-      Action   = statement.Action
-      Resource = statement.Resource
+  # Remove empty Conditions from statements
+  # This ensures consistent types across all statements
+  policy_statements = [
+    for stmt in local.policy_statements_raw :
+    length(keys(stmt.Condition)) > 0 ? stmt : {
+      Sid      = stmt.Sid
+      Effect   = stmt.Effect
+      Action   = stmt.Action
+      Resource = stmt.Resource
     }
   ]
 
   # Build the final policy document
   policy_document = {
     Version   = "2012-10-17"
-    Statement = local.policy_statements_cleaned
+    Statement = local.policy_statements
   }
 }
