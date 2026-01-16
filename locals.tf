@@ -141,11 +141,10 @@ locals {
     ] : []
   )
 
-  # Remove empty Conditions from statements
-  # Only remove Condition key if it's an empty object
+  # Remove empty Conditions and ensure consistent types
   policy_statements_cleaned = [
-    for statement in local.policy_statements : 
-    length(lookup(statement, "Condition", {})) > 0 ? statement : {
+    for statement in local.policy_statements :
+    length(statement.Condition) > 0 ? statement : {
       Sid      = statement.Sid
       Effect   = statement.Effect
       Action   = statement.Action
