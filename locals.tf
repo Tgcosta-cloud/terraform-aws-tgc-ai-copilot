@@ -3,8 +3,6 @@ locals {
   has_enforce_roles = length(var.ai_copilot_enforce_roles) > 0
   
   # Build condition for role enforcement
-  # If enforce_roles is set, only those roles are blocked
-  # If empty, all roles are blocked (default behavior)
   role_condition = local.has_enforce_roles ? {
     StringLike = {
       "aws:PrincipalArn" = [
@@ -40,8 +38,8 @@ locals {
           "ec2:AssociateAddress",
           "ec2:DisassociateAddress"
         ]
-        Resource = "*"
-        Condition = local.has_enforce_roles ? local.role_condition : null
+        Resource   = "*"
+        Condition  = local.has_enforce_roles ? local.role_condition : {}
       },
       {
         Sid      = "DenyAllocateAndReleaseElasticIp"
@@ -50,8 +48,8 @@ locals {
           "ec2:AllocateAddress",
           "ec2:ReleaseAddress"
         ]
-        Resource = "*"
-        Condition = local.has_enforce_roles ? local.role_condition : null
+        Resource   = "*"
+        Condition  = local.has_enforce_roles ? local.role_condition : {}
       }
     ] : [],
 
@@ -59,12 +57,15 @@ locals {
       {
         Sid      = "DenyWorldOpenSecurityGroupIngressIPv4"
         Effect   = "Deny"
-        Action   = "ec2:AuthorizeSecurityGroupIngress"
+        Action   = [
+          "ec2:AuthorizeSecurityGroupIngress",
+          "ec2:ModifySecurityGroupRules"
+        ]
         Resource = "*"
         Condition = merge(
           {
-            IpAddress = {
-              "ec2:CidrIp" = "0.0.0.0/0"
+            "ForAnyValue:StringEquals" = {
+              "ec2:Ipv4Ranges" = ["0.0.0.0/0"]
             }
           },
           local.role_condition
@@ -73,12 +74,15 @@ locals {
       {
         Sid      = "DenyWorldOpenSecurityGroupIngressIPv6"
         Effect   = "Deny"
-        Action   = "ec2:AuthorizeSecurityGroupIngress"
+        Action   = [
+          "ec2:AuthorizeSecurityGroupIngress",
+          "ec2:ModifySecurityGroupRules"
+        ]
         Resource = "*"
         Condition = merge(
           {
-            IpAddress = {
-              "ec2:CidrIpv6" = "::/0"
+            "ForAnyValue:StringEquals" = {
+              "ec2:Ipv6Ranges" = ["::/0"]
             }
           },
           local.role_condition
@@ -131,19 +135,18 @@ locals {
         Action   = [
           "s3:PutAccountPublicAccessBlock"
         ]
-        Resource = "*"
-        Condition = local.has_enforce_roles ? local.role_condition : null
+        Resource   = "*"
+        Condition  = local.has_enforce_roles ? local.role_condition : {}
       }
     ] : []
   )
 
-  # Remove null Conditions from statements
+  # Remove empty Conditions from statements (when role_condition is empty)
   policy_statements_cleaned = [
     for statement in local.policy_statements : 
-    statement.Condition != null ? statement : merge(
-      statement,
-      { for k, v in statement : k => v if k != "Condition" }
-    )
+    length(keys(statement.Condition)) > 0 ? statement : {
+      for k, v in statement : k => v if k != "Condition"
+    }
   ]
 
   # Build the final policy document
