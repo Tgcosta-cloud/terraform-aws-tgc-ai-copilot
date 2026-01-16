@@ -141,19 +141,31 @@ locals {
     ] : []
   )
 
-  # Remove empty Conditions and ensure type consistency
+  # Normalize all statements to have consistent structure
+  # Always include Condition field (empty object if no conditions)
   policy_statements = [
-    for stmt in local.policy_statements_raw :
+    for stmt in local.policy_statements_raw : {
+      Sid       = stmt.Sid
+      Effect    = stmt.Effect
+      Action    = stmt.Action
+      Resource  = stmt.Resource
+      Condition = stmt.Condition
+    }
+  ]
+
+  # Filter out statements with empty Conditions for the final policy
+  policy_statements_final = [
+    for stmt in local.policy_statements :
     length(keys(stmt.Condition)) > 0 ? {
       Sid       = stmt.Sid
       Effect    = stmt.Effect
-      Action    = tolist(stmt.Action)
+      Action    = stmt.Action
       Resource  = stmt.Resource
       Condition = stmt.Condition
     } : {
       Sid      = stmt.Sid
       Effect   = stmt.Effect
-      Action   = tolist(stmt.Action)
+      Action   = stmt.Action
       Resource = stmt.Resource
     }
   ]
@@ -161,6 +173,6 @@ locals {
   # Build the final policy document
   policy_document = {
     Version   = "2012-10-17"
-    Statement = local.policy_statements
+    Statement = local.policy_statements_final
   }
 }
