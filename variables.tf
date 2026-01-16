@@ -83,3 +83,13 @@ variable "ai_copilot_deny_s3_public_access_changes" {
   type        = bool
   default     = true
 }
+
+# ===================================
+# Role-Based Enforcement
+# ===================================
+
+variable "ai_copilot_enforce_roles" {
+  description = "List of IAM role names that should be enforced by this SCP. If empty, applies to all roles. Example: ['Dev-Role-Builder-Enforcement', 'AWSReservedSSO_DevRole_*']"
+  type        = list(string)
+  default     = []
+}
