@@ -4,7 +4,7 @@ locals {
   
   # Build condition for role enforcement
   role_condition = local.has_enforce_roles ? {
-    StringLike = {
+    ArnLike = {
       "aws:PrincipalArn" = [
         for role in var.ai_copilot_enforce_roles : "arn:${data.aws_partition.current.partition}:iam::*:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_${role}"
       ]
