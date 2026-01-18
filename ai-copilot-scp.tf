@@ -1,24 +1,221 @@
-resource "aws_organizations_policy" "deny_public_access" {
-  name        = var.ai_copilot_policy_name
-  description = var.ai_copilot_policy_description
-  type        = "SERVICE_CONTROL_POLICY"
+data "aws_iam_policy_document" "scp_policy" {
 
-  content = jsonencode(local.policy_document)
-
-  tags = merge(
-    var.ai_copilot_tags,
-    {
-      Name        = var.ai_copilot_policy_name
-      ManagedBy   = "Terraform"
-      PolicyType  = "SCP"
-      Environment = var.ai_copilot_environment
+  # Deny EC2 Launch with Public IP
+  dynamic "statement" {
+    for_each = local.deny_ec2_public_ip_statement
+    content {
+      sid    = "DenyEC2LaunchWithPublicIPv4"
+      effect = "Deny"
+      actions = [
+        "ec2:RunInstances"
+      ]
+      resources = ["*"]
+      dynamic "condition" {
+        for_each = local.has_enforce_roles ? [""] : []
+        content {
+          test     = "ArnLike"
+          variable = "aws:PrincipalArn"
+          values   = local.roles_to_enforce
+        }
+      }
+      condition {
+        test     = "Bool"
+        variable = "ec2:AssociatePublicIpAddress"
+        values   = ["true"]
+      }
     }
-  )
+  }
+
+  # Deny Associate/Disassociate Elastic IP
+  dynamic "statement" {
+    for_each = local.deny_elastic_ip_operations_statement
+    content {
+      sid    = "DenyAssociateElasticIp"
+      effect = "Deny"
+      actions = [
+        "ec2:AssociateAddress",
+        "ec2:DisassociateAddress"
+      ]
+      resources = ["*"]
+      dynamic "condition" {
+        for_each = local.has_enforce_roles ? [""] : []
+        content {
+          test     = "ArnLike"
+          variable = "aws:PrincipalArn"
+          values   = local.roles_to_enforce
+        }
+      }
+    }
+  }
+
+  # Deny Allocate/Release Elastic IP
+  dynamic "statement" {
+    for_each = local.deny_elastic_ip_operations_statement
+    content {
+      sid    = "DenyAllocateAndReleaseElasticIp"
+      effect = "Deny"
+      actions = [
+        "ec2:AllocateAddress",
+        "ec2:ReleaseAddress"
+      ]
+      resources = ["*"]
+      dynamic "condition" {
+        for_each = local.has_enforce_roles ? [""] : []
+        content {
+          test     = "ArnLike"
+          variable = "aws:PrincipalArn"
+          values   = local.roles_to_enforce
+        }
+      }
+    }
+  }
+
+  # Deny World Open Security Group Ingress IPv4
+  dynamic "statement" {
+    for_each = local.deny_public_security_groups_statement
+    content {
+      sid    = "DenyWorldOpenSecurityGroupIngressIPv4"
+      effect = "Deny"
+      actions = [
+        "ec2:AuthorizeSecurityGroupIngress",
+        "ec2:ModifySecurityGroupRules"
+      ]
+      resources = ["*"]
+      dynamic "condition" {
+        for_each = local.has_enforce_roles ? [""] : []
+        content {
+          test     = "ArnLike"
+          variable = "aws:PrincipalArn"
+          values   = local.roles_to_enforce
+        }
+      }
+      condition {
+        test     = "ForAnyValue:StringEquals"
+        variable = "ec2:Ipv4Ranges"
+        values   = ["0.0.0.0/0"]
+      }
+    }
+  }
+
+  # Deny World Open Security Group Ingress IPv6
+  dynamic "statement" {
+    for_each = local.deny_public_security_groups_statement
+    content {
+      sid    = "DenyWorldOpenSecurityGroupIngressIPv6"
+      effect = "Deny"
+      actions = [
+        "ec2:AuthorizeSecurityGroupIngress",
+        "ec2:ModifySecurityGroupRules"
+      ]
+      resources = ["*"]
+      dynamic "condition" {
+        for_each = local.has_enforce_roles ? [""] : []
+        content {
+          test     = "ArnLike"
+          variable = "aws:PrincipalArn"
+          values   = local.roles_to_enforce
+        }
+      }
+      condition {
+        test     = "ForAnyValue:StringEquals"
+        variable = "ec2:Ipv6Ranges"
+        values   = ["::/0"]
+      }
+    }
+  }
+
+  # Deny Internet-Facing Load Balancers
+  dynamic "statement" {
+    for_each = local.deny_internet_facing_lb_statement
+    content {
+      sid    = "DenyInternetFacingLoadBalancers"
+      effect = "Deny"
+      actions = [
+        "elasticloadbalancing:CreateLoadBalancer"
+      ]
+      resources = ["*"]
+      dynamic "condition" {
+        for_each = local.has_enforce_roles ? [""] : []
+        content {
+          test     = "ArnLike"
+          variable = "aws:PrincipalArn"
+          values   = local.roles_to_enforce
+        }
+      }
+      condition {
+        test     = "StringEquals"
+        variable = "elasticloadbalancing:Scheme"
+        values   = ["internet-facing"]
+      }
+    }
+  }
+
+  # Deny Load Balancers in Public Subnets
+  dynamic "statement" {
+    for_each = local.deny_lb_in_public_subnets_statement
+    content {
+      sid    = "DenyLoadBalancersInPublicSubnets"
+      effect = "Deny"
+      actions = [
+        "elasticloadbalancing:CreateLoadBalancer"
+      ]
+      resources = ["*"]
+      dynamic "condition" {
+        for_each = local.has_enforce_roles ? [""] : []
+        content {
+          test     = "ArnLike"
+          variable = "aws:PrincipalArn"
+          values   = local.roles_to_enforce
+        }
+      }
+      dynamic "condition" {
+        for_each = length(var.ai_copilot_public_subnet_ids) > 0 ? [""] : []
+        content {
+          test     = "ForAnyValue:StringEquals"
+          variable = "elasticloadbalancing:Subnet"
+          values   = var.ai_copilot_public_subnet_ids
+        }
+      }
+    }
+  }
+
+  # Deny Changes to S3 Account-Level Block Public Access
+  dynamic "statement" {
+    for_each = local.deny_s3_public_access_changes_statement
+    content {
+      sid    = "DenyChangesToS3AccountLevelBlockPublicAccess"
+      effect = "Deny"
+      actions = [
+        "s3:PutAccountPublicAccessBlock"
+      ]
+      resources = ["*"]
+      dynamic "condition" {
+        for_each = local.has_enforce_roles ? [""] : []
+        content {
+          test     = "ArnLike"
+          variable = "aws:PrincipalArn"
+          values   = local.roles_to_enforce
+        }
+      }
+    }
+  }
+
 }
 
-resource "aws_organizations_policy_attachment" "attach_to_targets" {
-  for_each = toset(var.ai_copilot_target_ids)
+# Generate the SCP Policy
+resource "aws_organizations_policy" "scp_document" {
+  name        = var.ai_copilot_policy_name
+  description = "${var.ai_copilot_policy_name} : SCP generated by ai-copilot-scp module"
+  content     = jsonencode(jsondecode(data.aws_iam_policy_document.scp_policy.json))
+  # Why jsonencode(jsondecode(...))?
+  # The aws_iam_policy_document data source produces a pretty-printed JSON string.
+  # Wrapping it with jsondecode converts it into a native Terraform structure, and then jsonencode serializes it back into a compact JSON string with no extra whitespace.
+  # This helps with SCP 5120 char limits
+}
 
-  policy_id = aws_organizations_policy.deny_public_access.id
+# Create the attachment for the targets
+resource "aws_organizations_policy_attachment" "scp_attachment" {
+  for_each  = toset(var.ai_copilot_target_ids)
+  policy_id = aws_organizations_policy.scp_document.id
   target_id = each.value
 }
