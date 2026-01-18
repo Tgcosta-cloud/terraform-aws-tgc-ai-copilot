@@ -1,5 +1,3 @@
-data "aws_partition" "current" {}
-
 locals {
   # Control toggles
   deny_ec2_public_ip_statement             = var.ai_copilot_deny_ec2_public_ip ? [""] : []
