@@ -164,8 +164,7 @@ resource "aws_organizations_policy" "scp_document" {
 
 # Create the attachment for the targets
 resource "aws_organizations_policy_attachment" "scp_attachment" {
-  count = var.ai_copilot_create_developer_scp ? 1 : 0
-  for_each  = toset(var.ai_copilot_target_ids)
+  for_each  = var.ai_copilot_create_developer_scp ? toset(var.ai_copilot_target_ids) : toset([])
   policy_id = aws_organizations_policy.scp_document.id
   target_id = each.value
 }
