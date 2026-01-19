@@ -116,3 +116,49 @@ variable "ai_copilot_application_permissions_boundary_name" {
   type        = string
   default     = "cognitus-dev-application-permissions-boundary"
 }
+
+
+# Permission Set Variables
+variable "ai_copilot_create_permission_set" {
+  description = "Enable creation of AWS IAM Identity Center Permission Set"
+  type        = bool
+  default     = false
+}
+
+variable "ai_copilot_permission_set_name" {
+  description = "Name of the Permission Set in AWS IAM Identity Center"
+  type        = string
+  default     = "AI-Copilot-Developer"
+}
+
+variable "ai_copilot_permission_set_description" {
+  description = "Description of the Permission Set"
+  type        = string
+  default     = "Permission Set for AI Copilot developers with application development and limited IAM permissions including enforced permissions boundary"
+}
+
+variable "ai_copilot_session_duration" {
+  description = "Session duration for the Permission Set (in ISO-8601 format, e.g., PT8H for 8 hours)"
+  type        = string
+  default     = "PT8H"
+}
+
+# Policy Attachment Toggles
+variable "ai_copilot_attach_developer_application_policy" {
+  description = "Attach the Developer Application Policy to the Permission Set"
+  type        = bool
+  default     = true
+}
+
+variable "ai_copilot_attach_developer_iam_guardrail" {
+  description = "Attach the Developer IAM Guardrail Policy to the Permission Set"
+  type        = bool
+  default     = true
+}
+
+variable "ai_copilot_attach_permissions_boundary" {
+  description = "Attach the Application Permissions Boundary to the Permission Set"
+  type        = bool
+  default     = true
+}
+
