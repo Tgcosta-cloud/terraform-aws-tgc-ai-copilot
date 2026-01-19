@@ -103,3 +103,16 @@ variable "ai_copilot_developer_application_policy_name" {
   type        = string
   default     = "cognitus-dev-ai-developer"
 }
+
+# Application Permissions Boundary Variables
+variable "ai_copilot_create_application_permissions_boundary" {
+  description = "Enable creation of application permissions boundary - defines maximum permissions that developer roles and application roles can have"
+  type        = bool
+  default     = false
+}
+
+variable "ai_copilot_application_permissions_boundary_name" {
+  description = "Name of the application permissions boundary policy"
+  type        = string
+  default     = "cognitus-dev-application-permissions-boundary"
+}
