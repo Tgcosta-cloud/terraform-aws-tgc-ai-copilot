@@ -1,3 +1,8 @@
+variable "ai_copilot_create_developer_scp" {
+  description = "Enable creation of developer SCP policy"
+  type        = bool
+  default     = false
+}
 variable "ai_copilot_policy_name" {
   description = "Name of the SCP policy"
   type        = string
