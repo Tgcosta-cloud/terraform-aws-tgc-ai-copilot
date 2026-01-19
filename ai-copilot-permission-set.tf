@@ -27,10 +27,6 @@ resource "aws_ssoadmin_customer_managed_policy_attachment" "developer_applicatio
     name = var.ai_copilot_developer_application_policy_name
     path = "/"
   }
-
-  depends_on = [
-    aws_iam_policy.developer_application_policy
-  ]
 }
 
 # Attach the Developer IAM Permissions Guardrail Policy
@@ -44,9 +40,6 @@ resource "aws_ssoadmin_customer_managed_policy_attachment" "developer_iam_guardr
     path = "/"
   }
 
-  depends_on = [
-    aws_iam_policy.ai_copilot_developer_iam_permissions_guardrail
-  ]
 }
 
 # Set the Permissions Boundary on the Permission Set
@@ -62,8 +55,4 @@ resource "aws_ssoadmin_permissions_boundary_attachment" "application_boundary" {
       path = "/"
     }
   }
-
-  depends_on = [
-    aws_iam_policy.application_permissions_boundary
-  ]
 }
