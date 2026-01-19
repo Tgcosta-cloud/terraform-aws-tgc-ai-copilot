@@ -70,59 +70,6 @@ data "aws_iam_policy_document" "scp_policy" {
     }
   }
 
-  # Deny World Open Security Group Ingress IPv4
-  dynamic "statement" {
-    for_each = local.deny_public_security_groups_statement
-    content {
-      sid    = "DenyWorldOpenSecurityGroupIngressIPv4"
-      effect = "Deny"
-      actions = [
-        "ec2:AuthorizeSecurityGroupIngress",
-        "ec2:ModifySecurityGroupRules"
-      ]
-      resources = ["*"]
-      dynamic "condition" {
-        for_each = local.has_enforce_roles ? [""] : []
-        content {
-          test     = "ArnLike"
-          variable = "aws:PrincipalArn"
-          values   = local.roles_to_enforce
-        }
-      }
-      condition {
-        test     = "ForAnyValue:StringEquals"
-        variable = "ec2:Ipv4Ranges"
-        values   = ["0.0.0.0/0"]
-      }
-    }
-  }
-
-  # Deny World Open Security Group Ingress IPv6
-  dynamic "statement" {
-    for_each = local.deny_public_security_groups_statement
-    content {
-      sid    = "DenyWorldOpenSecurityGroupIngressIPv6"
-      effect = "Deny"
-      actions = [
-        "ec2:AuthorizeSecurityGroupIngress",
-        "ec2:ModifySecurityGroupRules"
-      ]
-      resources = ["*"]
-      dynamic "condition" {
-        for_each = local.has_enforce_roles ? [""] : []
-        content {
-          test     = "ArnLike"
-          variable = "aws:PrincipalArn"
-          values   = local.roles_to_enforce
-        }
-      }
-      condition {
-        test     = "ForAnyValue:StringEquals"
-        variable = "ec2:Ipv6Ranges"
-        values   = ["::/0"]
-      }
-    }
-  }
 
   # Deny Internet-Facing Load Balancers
   dynamic "statement" {

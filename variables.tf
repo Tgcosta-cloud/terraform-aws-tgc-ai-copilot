@@ -22,12 +22,6 @@ variable "ai_copilot_deny_elastic_ip_operations" {
   default     = false
 }
 
-variable "ai_copilot_deny_public_security_groups" {
-  description = "Enable control to deny Security Group rules with public access (0.0.0.0/0 or ::/0)"
-  type        = bool
-  default     = false
-}
-
 variable "ai_copilot_deny_internet_facing_lb" {
   description = "Enable control to deny internet-facing Load Balancers"
   type        = bool

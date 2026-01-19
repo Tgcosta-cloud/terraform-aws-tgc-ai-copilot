@@ -2,7 +2,6 @@ locals {
   # Control toggles
   deny_ec2_public_ip_statement             = var.ai_copilot_deny_ec2_public_ip ? [""] : []
   deny_elastic_ip_operations_statement     = var.ai_copilot_deny_elastic_ip_operations ? [""] : []
-  deny_public_security_groups_statement    = var.ai_copilot_deny_public_security_groups ? [""] : []
   deny_internet_facing_lb_statement        = var.ai_copilot_deny_internet_facing_lb ? [""] : []
   deny_lb_in_public_subnets_statement      = var.ai_copilot_deny_lb_in_public_subnets ? [""] : []
   deny_s3_public_access_changes_statement  = var.ai_copilot_deny_s3_public_access_changes ? [""] : []
