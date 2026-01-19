@@ -52,7 +52,7 @@ variable "ai_copilot_enforce_roles" {
   default     = []
 }
 
-# Developer IAM Policy Variables
+# Developer IAM Policy Variables Guardrail
 variable "ai_copilot_create_developer_iam_policy_guardrail" {
   description = "Enable creation of developer IAM policy with permissions boundary enforcement"
   type        = bool
