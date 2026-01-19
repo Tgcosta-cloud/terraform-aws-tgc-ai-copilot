@@ -51,3 +51,37 @@ variable "ai_copilot_enforce_roles" {
   type        = list(string)
   default     = []
 }
+
+# Developer IAM Policy Variables
+variable "ai_copilot_create_developer_iam_policy_guardrail" {
+  description = "Enable creation of developer IAM policy with permissions boundary enforcement"
+  type        = bool
+  default     = false
+}
+
+variable "ai_copilot_developer_policy_name_guardrail" {
+  description = "Name of the IAM policy for developers"
+  type        = string
+  default     = "cognitus-developer-iam-permissions"
+}
+
+variable "ai_copilot_developer_permissions_boundary_name" {
+  description = "Name of the required permissions boundary policy"
+  type        = string
+  default     = "cognitus-dev-application-permissions-boundary"
+}
+
+variable "ai_copilot_developer_role_prefix" {
+  description = "Prefix that developers can use when creating roles"
+  type        = string
+  default     = "dev-app-"
+}
+
+variable "ai_copilot_developer_allowed_passrole_services" {
+  description = "List of AWS services that developers can pass roles to"
+  type        = list(string)
+  default = [
+    "lambda.amazonaws.com",
+    "ecs-tasks.amazonaws.com"
+  ]
+}
