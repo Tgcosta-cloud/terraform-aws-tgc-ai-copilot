@@ -90,3 +90,16 @@ variable "ai_copilot_developer_allowed_passrole_services" {
     "ecs-tasks.amazonaws.com"
   ]
 }
+
+# Developer Application Policy Variables
+variable "ai_copilot_create_developer_application_policy" {
+  description = "Enable creation of developer application policy - grants day-to-day permissions for building and deploying applications"
+  type        = bool
+  default     = false
+}
+
+variable "ai_copilot_developer_application_policy_name" {
+  description = "Name of the developer application policy"
+  type        = string
+  default     = "cognitus-dev-ai-developer"
+}
