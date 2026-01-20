@@ -162,3 +162,104 @@ variable "ai_copilot_attach_permissions_boundary" {
   default     = true
 }
 
+# ========================================
+# Account Assignment Variables
+# ========================================
+
+variable "ai_copilot_target_account_ids" {
+  description = <<-EOT
+    List of AWS Account IDs where the Permission Set will be assigned.
+    Users/groups will be able to access these accounts using this Permission Set.
+    Example: ["123456789012", "234567890123"]
+  EOT
+  type        = list(string)
+  default     = []
+  
+  validation {
+    condition = alltrue([
+      for account in var.ai_copilot_target_account_ids :
+      can(regex("^[0-9]{12}$", account))
+    ])
+    error_message = "Account IDs must be 12-digit numbers."
+  }
+}
+
+variable "ai_copilot_user_names" {
+  description = <<-EOT
+    List of Identity Center user names (email addresses or usernames) to assign the Permission Set.
+    These must match EXACTLY the UserName in IAM Identity Center (case-sensitive).
+    Example: ["thiago@company.com", "developer1@company.com"]
+    Note: Using groups is recommended over individual users for easier management.
+  EOT
+  type        = list(string)
+  default     = []
+}
+
+variable "ai_copilot_group_names" {
+  description = <<-EOT
+    List of Identity Center group display names to assign the Permission Set.
+    These must match EXACTLY the DisplayName in IAM Identity Center (case-sensitive).
+    Example: ["Developers", "AI-Engineers", "DevOps-Team"]
+    Recommended: Use groups instead of individual users for easier management.
+  EOT
+  type        = list(string)
+  default     = []
+  
+  validation {
+    condition     = length(var.ai_copilot_user_names) > 0 || length(var.ai_copilot_group_names) > 0 || !var.ai_copilot_create_permission_set
+    error_message = "At least one user or group must be specified when creating a Permission Set, or set ai_copilot_create_permission_set to false."
+  }
+}
+
+# ========================================
+# Advanced Account Assignment (Optional)
+# ========================================
+
+variable "ai_copilot_account_assignments" {
+  description = <<-EOT
+    Advanced: Granular control over account assignments.
+    Allows different users/groups per account.
+    If specified, this takes precedence over ai_copilot_user_names and ai_copilot_group_names.
+    
+    Example:
+    {
+      dev = {
+        account_id = "123456789012"
+        users      = ["dev1@company.com"]
+        groups     = ["Developers", "Junior-Devs"]
+      }
+      prod = {
+        account_id = "345678901234"
+        users      = []
+        groups     = ["Senior-Developers"]
+      }
+    }
+  EOT
+  type = map(object({
+    account_id = string
+    users      = list(string)
+    groups     = list(string)
+  }))
+  default = {}
+}
+
+# ========================================
+# Validation and Helper Variables
+# ========================================
+
+variable "ai_copilot_enable_assignment_validation" {
+  description = "Enable validation checks for account assignments (checks if users/groups exist before creating assignments)"
+  type        = bool
+  default     = true
+}
+
+variable "ai_copilot_assignment_wait_time" {
+  description = "Time to wait for assignments to propagate (in seconds). Useful for automation."
+  type        = number
+  default     = 60
+  
+  validation {
+    condition     = var.ai_copilot_assignment_wait_time >= 0 && var.ai_copilot_assignment_wait_time <= 300
+    error_message = "Wait time must be between 0 and 300 seconds."
+  }
+}
