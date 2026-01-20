@@ -42,12 +42,14 @@ data "aws_iam_policy_document" "ai_copilot_developer_iam_permissions_guardrail" 
 
     sid     = "AllowDeleteDevAppRolesWithBoundary"
     effect  = "Allow"
-    actions = ["iam:DeleteRole"]
+    actions = [
+        "iam:DeleteRole"
+        ]
     resources = [
       "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:role/${var.ai_copilot_developer_role_prefix}*"
     ]
     condition {
-      test     = "StringEqArnEqualsuals"
+      test     = "ArnEquals"
       variable = "iam:PermissionsBoundary"
       values = [
         "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:policy/${var.ai_copilot_developer_permissions_boundary_name}"
