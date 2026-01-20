@@ -38,6 +38,23 @@ data "aws_iam_policy_document" "ai_copilot_developer_iam_permissions_guardrail" 
       ]
     }
   }
+  statement {
+
+    sid     = "AllowDeleteDevAppRolesWithBoundary"
+    effect  = "Allow"
+    actions = ["iam:DeleteRole"]
+    resources = [
+      "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:role/${var.ai_copilot_developer_role_prefix}*"
+    ]
+    condition {
+      test     = "StringEqArnEqualsuals"
+      variable = "iam:PermissionsBoundary"
+      values = [
+        "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:policy/${var.ai_copilot_developer_permissions_boundary_name}"
+      ]
+    }
+
+  }
 
   # Allow Manage Inline Policies On Dev App Roles
   statement {
@@ -75,9 +92,9 @@ data "aws_iam_policy_document" "ai_copilot_developer_iam_permissions_guardrail" 
 
   # Allow Pass Dev App Roles To Approved Services Only
   statement {
-    sid       = "AllowPassDevAppRolesToApprovedServicesOnly"
-    effect    = "Allow"
-    actions   = ["iam:PassRole"]
+    sid     = "AllowPassDevAppRolesToApprovedServicesOnly"
+    effect  = "Allow"
+    actions = ["iam:PassRole"]
     resources = [
       "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:role/${var.ai_copilot_developer_role_prefix}*"
     ]
@@ -105,9 +122,9 @@ data "aws_iam_policy_document" "ai_copilot_developer_iam_permissions_guardrail" 
 
   # Deny Creating Roles Outside Dev App Prefix
   statement {
-    sid           = "DenyCreatingRolesOutsideDevAppPrefix"
-    effect        = "Deny"
-    actions       = ["iam:CreateRole"]
+    sid     = "DenyCreatingRolesOutsideDevAppPrefix"
+    effect  = "Deny"
+    actions = ["iam:CreateRole"]
     not_resources = [
       "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:role/${var.ai_copilot_developer_role_prefix}*"
     ]
