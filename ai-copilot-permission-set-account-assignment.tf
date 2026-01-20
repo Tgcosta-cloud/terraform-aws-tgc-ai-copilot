@@ -1,145 +1,69 @@
-# account-assignment.tf
-# Add this file to your ai-copilot module to enable account assignments
+# Uses ai_copilot_target_ids for account assignment
+# Supports optional default principal (group or user) for initial assignment
 
 # ========================================
-# Data Sources for Identity Center
+# APPROACH 1: Assign to a Default Group (RECOMMENDED)
 # ========================================
+# Best for: Initial setup with a default "Admins" or "Developers" group
+# 
+# This approach assigns the Permission Set to your target accounts
+# using a default group that you specify (e.g., "Administrators")
+# 
+# Users in that group will automatically get access.
+# You can add more groups/users later via console or by expanding the Terraform code.
 
-# Get Identity Center users by username
-data "aws_identitystore_user" "ai_copilot_users" {
-  for_each = var.ai_copilot_create_permission_set ? toset(var.ai_copilot_user_names) : []
-
-  identity_store_id = tolist(data.aws_ssoadmin_instances.this[0].identity_store_ids)[0]
-
-  alternate_identifier {
-    unique_attribute {
-      attribute_path  = "UserName"
-      attribute_value = each.value
-    }
-  }
-}
-
-# Get Identity Center groups by display name
-data "aws_identitystore_group" "ai_copilot_groups" {
-  for_each = var.ai_copilot_create_permission_set ? toset(var.ai_copilot_group_names) : []
+# Get the default group if specified
+data "aws_identitystore_group" "ai_copilot_default_group" {
+  count = var.ai_copilot_create_permission_set && var.ai_copilot_default_group_name != "" ? 1 : 0
 
   identity_store_id = tolist(data.aws_ssoadmin_instances.this[0].identity_store_ids)[0]
 
   alternate_identifier {
     unique_attribute {
       attribute_path  = "DisplayName"
-      attribute_value = each.value
+      attribute_value = var.ai_copilot_default_group_name
     }
   }
 }
 
-# ========================================
-# Account Assignments for Users
-# ========================================
+# Get the default user if specified (alternative to group)
+data "aws_identitystore_user" "ai_copilot_default_user" {
+  count = var.ai_copilot_create_permission_set && var.ai_copilot_default_user_name != "" ? 1 : 0
 
-resource "aws_ssoadmin_account_assignment" "ai_copilot_user_assignments" {
-  for_each = var.ai_copilot_create_permission_set ? {
-    for assignment in local.ai_copilot_user_account_assignments : 
-    "${assignment.user}-${assignment.account}" => assignment
-  } : {}
+  identity_store_id = tolist(data.aws_ssoadmin_instances.this[0].identity_store_ids)[0]
 
-  instance_arn       = tolist(data.aws_ssoadmin_instances.this[0].arns)[0]
-  permission_set_arn = aws_ssoadmin_permission_set.ai_copilot_developer[0].arn
-
-  principal_id   = data.aws_identitystore_user.ai_copilot_users[each.value.user].user_id
-  principal_type = "USER"
-
-  target_id   = each.value.account
-  target_type = "AWS_ACCOUNT"
+  alternate_identifier {
+    unique_attribute {
+      attribute_path  = "UserName"
+      attribute_value = var.ai_copilot_default_user_name
+    }
+  }
 }
 
-# ========================================
-# Account Assignments for Groups
-# ========================================
-
-resource "aws_ssoadmin_account_assignment" "ai_copilot_group_assignments" {
-  for_each = var.ai_copilot_create_permission_set ? {
-    for assignment in local.ai_copilot_group_account_assignments : 
-    "${assignment.group}-${assignment.account}" => assignment
-  } : {}
+# Assign Permission Set to all target accounts using default GROUP
+resource "aws_ssoadmin_account_assignment" "default_group_assignments" {
+  for_each = var.ai_copilot_create_permission_set && var.ai_copilot_default_group_name != "" ? toset(var.ai_copilot_target_ids) : []
 
   instance_arn       = tolist(data.aws_ssoadmin_instances.this[0].arns)[0]
   permission_set_arn = aws_ssoadmin_permission_set.ai_copilot_developer[0].arn
 
-  principal_id   = data.aws_identitystore_group.ai_copilot_groups[each.value.group].group_id
+  principal_id   = data.aws_identitystore_group.ai_copilot_default_group[0].group_id
   principal_type = "GROUP"
 
-  target_id   = each.value.account
+  target_id   = each.value
   target_type = "AWS_ACCOUNT"
 }
 
-# ========================================
-# Locals for Cartesian Products
-# ========================================
+# Assign Permission Set to all target accounts using default USER (if no group specified)
+resource "aws_ssoadmin_account_assignment" "default_user_assignments" {
+  for_each = var.ai_copilot_create_permission_set && var.ai_copilot_default_group_name == "" && var.ai_copilot_default_user_name != "" ? toset(var.ai_copilot_target_ids) : []
 
-locals {
-  # Create all combinations of users × accounts
-  ai_copilot_user_account_assignments = flatten([
-    for user in var.ai_copilot_user_names : [
-      for account in var.ai_copilot_target_account_ids : {
-        user    = user
-        account = account
-      }
-    ]
-  ])
+  instance_arn       = tolist(data.aws_ssoadmin_instances.this[0].arns)[0]
+  permission_set_arn = aws_ssoadmin_permission_set.ai_copilot_developer[0].arn
 
-  # Create all combinations of groups × accounts
-  ai_copilot_group_account_assignments = flatten([
-    for group in var.ai_copilot_group_names : [
-      for account in var.ai_copilot_target_account_ids : {
-        group   = group
-        account = account
-      }
-    ]
-  ])
-}
+  principal_id   = data.aws_identitystore_user.ai_copilot_default_user[0].user_id
+  principal_type = "USER"
 
-# ========================================
-# Outputs
-# ========================================
-
-output "ai_copilot_permission_set_arn" {
-  description = "ARN of the AI Copilot Permission Set"
-  value       = var.ai_copilot_create_permission_set ? aws_ssoadmin_permission_set.ai_copilot_developer[0].arn : null
-}
-
-output "ai_copilot_user_assignments" {
-  description = "Map of user account assignments created"
-  value = var.ai_copilot_create_permission_set ? {
-    for k, v in aws_ssoadmin_account_assignment.ai_copilot_user_assignments :
-    k => {
-      user       = v.principal_id
-      account    = v.target_id
-      created_at = v.id
-    }
-  } : {}
-}
-
-output "ai_copilot_group_assignments" {
-  description = "Map of group account assignments created"
-  value = var.ai_copilot_create_permission_set ? {
-    for k, v in aws_ssoadmin_account_assignment.ai_copilot_group_assignments :
-    k => {
-      group      = v.principal_id
-      account    = v.target_id
-      created_at = v.id
-    }
-  } : {}
-}
-
-output "ai_copilot_assignment_summary" {
-  description = "Summary of all assignments"
-  value = var.ai_copilot_create_permission_set ? {
-    permission_set_name = aws_ssoadmin_permission_set.ai_copilot_developer[0].name
-    total_user_assignments = length(aws_ssoadmin_account_assignment.ai_copilot_user_assignments)
-    total_group_assignments = length(aws_ssoadmin_account_assignment.ai_copilot_group_assignments)
-    target_accounts = var.ai_copilot_target_account_ids
-    users_assigned = var.ai_copilot_user_names
-    groups_assigned = var.ai_copilot_group_names
-  } : null
+  target_id   = each.value
+  target_type = "AWS_ACCOUNT"
 }
