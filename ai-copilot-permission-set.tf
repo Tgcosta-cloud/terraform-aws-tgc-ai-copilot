@@ -41,18 +41,3 @@ resource "aws_ssoadmin_customer_managed_policy_attachment" "developer_iam_guardr
   }
 
 }
-
-# Set the Permissions Boundary on the Permission Set
-resource "aws_ssoadmin_permissions_boundary_attachment" "application_boundary" {
-  count = var.ai_copilot_create_permission_set && var.ai_copilot_attach_permissions_boundary ? 1 : 0
-
-  instance_arn       = tolist(data.aws_ssoadmin_instances.this[0].arns)[0]
-  permission_set_arn = aws_ssoadmin_permission_set.ai_copilot_developer[0].arn
-
-  permissions_boundary {
-    customer_managed_policy_reference {
-      name = var.ai_copilot_application_permissions_boundary_name
-      path = "/"
-    }
-  }
-}
