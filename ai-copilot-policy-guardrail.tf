@@ -76,7 +76,7 @@ data "aws_iam_policy_document" "ai_copilot_developer_iam_permissions_guardrail" 
   # Allow Attach/Detach Only AWS Managed Policies To Dev App Roles
   statement {
     sid    = "AllowAttachDetachOnlyAwsManagedPoliciesToDevAppRolesOptional"
-    effect = "Allow"
+    effect = "Deny"
     actions = [
       "iam:AttachRolePolicy",
       "iam:DetachRolePolicy"
@@ -86,9 +86,11 @@ data "aws_iam_policy_document" "ai_copilot_developer_iam_permissions_guardrail" 
     ]
 
     condition {
-      test     = "ArnLike"
-      variable = "iam:PolicyARN"
-      values   = ["arn:${data.aws_partition.current.partition}:iam::aws:policy/*"]
+      test     = "ArnNotEquals"
+      variable = "iam:PermissionsBoundary"
+      values = [
+        "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:policy/${var.ai_copilot_developer_permissions_boundary_name}"
+       ]
     }
   }
 
