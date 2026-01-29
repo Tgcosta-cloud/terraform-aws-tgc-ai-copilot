@@ -29,7 +29,7 @@ count = var.ai_copilot_create_developer_application_policy ? 1 : 0
 # 3️⃣ Anexar uma política de exemplo (ReadOnly)
 resource "aws_iam_role_policy_attachment" "readonly_attach" {
 count = var.ai_copilot_create_developer_application_policy ? 1 : 0
-  role       = aws_iam_role.saml_role.name
+  role       = aws_iam_role.saml_role[0].name
   policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
 }
 
@@ -37,7 +37,7 @@ count = var.ai_copilot_create_developer_application_policy ? 1 : 0
 resource "aws_iam_role_policy" "custom_policy" {
 count = var.ai_copilot_create_developer_application_policy ? 1 : 0
   name = "CustomSAMLPolicy"
-  role = aws_iam_role.saml_role.id
+  role = aws_iam_role.saml_role[0].id
 
   policy = jsonencode({
     Version = "2012-10-17"
