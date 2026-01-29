@@ -10,8 +10,9 @@ locals {
   has_enforce_roles = length(var.ai_copilot_enforce_roles) > 0
 
   # Build role ARN patterns for enforcement
+  # Build role ARN patterns for enforcement
   roles_to_enforce = local.has_enforce_roles ? [
-    for role in var.ai_copilot_enforce_roles : "arn:${data.aws_partition.current.partition}:iam::*:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_${role}"
+    for role in var.ai_copilot_enforce_roles : "arn:${data.aws_partition.current.partition}:iam::*:role/${role}"
   ] : []
 
   ai_copilot_has_default_principal = var.ai_copilot_default_group_name != "" || var.ai_copilot_default_user_name != ""
