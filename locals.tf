@@ -10,7 +10,6 @@ locals {
   has_enforce_roles = length(var.ai_copilot_enforce_roles) > 0
 
   # Build role ARN patterns for enforcement
-  # Build role ARN patterns for enforcement
   roles_to_enforce = local.has_enforce_roles ? [
     for role in var.ai_copilot_enforce_roles : "arn:${data.aws_partition.current.partition}:iam::*:role/${role}"
   ] : []
@@ -22,5 +21,4 @@ locals {
     length(var.ai_copilot_target_ids) == 0 ||
     local.ai_copilot_has_default_principal
   ) ? true : tobool("ERROR: When ai_copilot_create_permission_set=true and ai_copilot_target_ids is not empty, you must specify either ai_copilot_default_group_name or ai_copilot_default_user_name")
-
 }

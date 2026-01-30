@@ -1,13 +1,13 @@
-# 1️⃣ Reference the existing SAML provider
-data "aws_iam_saml_provider" "example" {
+# Reference the existing SAML provider
+data "aws_iam_saml_provider" "ai_copilot_saml" {
   count = var.ai_copilot_create_developer_application_policy ? 1 : 0
-  arn   = "arn:aws:iam::274016496335:saml-provider/ContaAzureteste"
+  arn   = var.ai_copilot_saml_provider_arn
 }
 
-# 2️⃣ Create the Role with SAML trust policy
-resource "aws_iam_role" "saml_role" {
+# Create the SAML Role with trust policy
+resource "aws_iam_role" "ai_copilot_saml_developer" {
   count = var.ai_copilot_create_developer_application_policy ? 1 : 0
-  name  = "SAML-ReadOnly-Role"
+  name  = var.ai_copilot_saml_role_name
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -15,7 +15,7 @@ resource "aws_iam_role" "saml_role" {
       {
         Effect = "Allow"
         Principal = {
-          Federated = data.aws_iam_saml_provider.example[0].arn
+          Federated = data.aws_iam_saml_provider.ai_copilot_saml[0].arn
         }
         Action = "sts:AssumeRoleWithSAML"
         Condition = {
@@ -26,29 +26,36 @@ resource "aws_iam_role" "saml_role" {
       }
     ]
   })
+
+  # Ensure policies are created before the role
+  depends_on = [
+    aws_iam_policy.developer_application_policy,
+    aws_iam_policy.ai_copilot_developer_iam_permissions_guardrail
+  ]
 }
 
-# 3️⃣ Attach ReadOnly managed policy
-resource "aws_iam_role_policy_attachment" "readonly_attach" {
-  count      = var.ai_copilot_create_developer_application_policy ? 1 : 0
-  role       = aws_iam_role.saml_role[0].name
-  policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
-}
-
-# 4️⃣ (Optional) Custom inline policy
-resource "aws_iam_role_policy" "custom_policy" {
+# Attach Developer Application Policy (from ai-copilot-dev-policy.tf)
+resource "aws_iam_role_policy_attachment" "developer_application_policy_attach" {
   count = var.ai_copilot_create_developer_application_policy ? 1 : 0
-  name  = "CustomSAMLPolicy"
-  role  = aws_iam_role.saml_role[0].id
 
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect   = "Allow"
-        Action   = ["s3:ListAllMyBuckets"]
-        Resource = "*"
-      }
-    ]
-  })
+  role       = aws_iam_role.ai_copilot_saml_developer[0].name
+  policy_arn = aws_iam_policy.developer_application_policy[0].arn
+
+  depends_on = [
+    aws_iam_role.ai_copilot_saml_developer,
+    aws_iam_policy.developer_application_policy
+  ]
+}
+
+# Attach Developer IAM Guardrail Policy (from ai-copilot-policy-guardrail.tf)
+resource "aws_iam_role_policy_attachment" "developer_iam_guardrail_attach" {
+  count = var.ai_copilot_create_developer_iam_policy_guardrail ? 1 : 0
+
+  role       = aws_iam_role.ai_copilot_saml_developer[0].name
+  policy_arn = aws_iam_policy.ai_copilot_developer_iam_permissions_guardrail[0].arn
+
+  depends_on = [
+    aws_iam_role.ai_copilot_saml_developer,
+    aws_iam_policy.ai_copilot_developer_iam_permissions_guardrail
+  ]
 }

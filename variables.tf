@@ -3,6 +3,7 @@ variable "ai_copilot_create_developer_scp" {
   type        = bool
   default     = false
 }
+
 variable "ai_copilot_policy_name" {
   description = "Name of the SCP policy"
   type        = string
@@ -117,7 +118,6 @@ variable "ai_copilot_application_permissions_boundary_name" {
   default     = "cognitus-dev-application-permissions-boundary"
 }
 
-
 # Permission Set Variables
 variable "ai_copilot_create_permission_set" {
   description = "Enable creation of AWS IAM Identity Center Permission Set"
@@ -196,4 +196,20 @@ variable "ai_copilot_default_user_name" {
   EOT
   type        = string
   default     = ""
+}
+
+# ========================================
+# SAML Provider Variables
+# ========================================
+
+variable "ai_copilot_saml_provider_arn" {
+  description = "ARN of the existing SAML Identity Provider in AWS IAM"
+  type        = string
+  default     = "arn:aws:iam::274016496335:saml-provider/ContaAzureteste"
+}
+
+variable "ai_copilot_saml_role_name" {
+  description = "Name of the SAML federated IAM role to create"
+  type        = string
+  default     = "SAML-Developer-Role"
 }
