@@ -202,14 +202,20 @@ variable "ai_copilot_default_user_name" {
 # SAML Provider Variables
 # ========================================
 
+variable "ai_copilot_create_developer_role" {
+  description = "Enable creation of SAML developer role. Role will only be created if this is true AND at least one policy (guardrail or application) is enabled."
+  type        = bool
+  default     = false
+}
+
 variable "ai_copilot_saml_provider_arn" {
   description = "ARN of the existing SAML Identity Provider in AWS IAM"
   type        = string
-  default     = "arn:aws:iam::274016496335:saml-provider/ContaAzureteste"
+  default     = ""
 }
 
 variable "ai_copilot_saml_role_name" {
   description = "Name of the SAML federated IAM role to create"
   type        = string
-  default     = "SAML-Developer-Role"
+  default     = "SSOAICOPILOT"
 }

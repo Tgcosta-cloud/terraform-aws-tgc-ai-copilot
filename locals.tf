@@ -21,4 +21,10 @@ locals {
     length(var.ai_copilot_target_ids) == 0 ||
     local.ai_copilot_has_default_principal
   ) ? true : tobool("ERROR: When ai_copilot_create_permission_set=true and ai_copilot_target_ids is not empty, you must specify either ai_copilot_default_group_name or ai_copilot_default_user_name")
+  
+  # Local to determine if role should be created
+  create_saml_role = var.ai_copilot_create_developer_role && (
+    var.ai_copilot_create_developer_iam_policy_guardrail ||
+    var.ai_copilot_create_developer_application_policy
+  )
 }
