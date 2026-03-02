@@ -92,6 +92,16 @@ variable "ai_copilot_developer_allowed_passrole_services" {
   ]
 }
 
+variable "ai_copilot_developer_allowed_passrole_arns" {
+  description = "Explicit list of additional IAM role ARNs that developers can PassRole to approved services. Use for pre-existing roles outside the dev-app-* prefix, e.g. ecsTaskExecutionRole."
+  type        = list(string)
+  default = [
+    "arn:aws:iam::*:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS"
+  ]
+}
+
+
+
 # Developer Application Policy Variables
 variable "ai_copilot_create_developer_application_policy" {
   description = "Enable creation of developer application policy - grants day-to-day permissions for building and deploying applications"

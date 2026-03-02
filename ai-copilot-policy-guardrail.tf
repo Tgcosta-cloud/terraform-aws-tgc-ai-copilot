@@ -40,11 +40,11 @@ data "aws_iam_policy_document" "ai_copilot_developer_iam_permissions_guardrail" 
   }
   statement {
 
-    sid     = "AllowDeleteDevAppRolesWithBoundary"
-    effect  = "Allow"
+    sid    = "AllowDeleteDevAppRolesWithBoundary"
+    effect = "Allow"
     actions = [
-        "iam:DeleteRole"
-        ]
+      "iam:DeleteRole"
+    ]
     resources = [
       "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:role/${var.ai_copilot_developer_role_prefix}*"
     ]
@@ -90,7 +90,7 @@ data "aws_iam_policy_document" "ai_copilot_developer_iam_permissions_guardrail" 
       variable = "iam:PermissionsBoundary"
       values = [
         "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:policy/${var.ai_copilot_developer_permissions_boundary_name}"
-       ]
+      ]
     }
   }
 
@@ -107,6 +107,23 @@ data "aws_iam_policy_document" "ai_copilot_developer_iam_permissions_guardrail" 
       test     = "StringEquals"
       variable = "iam:PassedToService"
       values   = var.ai_copilot_developer_allowed_passrole_services
+    }
+  }
+
+  # Allow PassRole for explicitly listed additional roles to approved services
+  dynamic "statement" {
+    for_each = length(var.ai_copilot_developer_allowed_passrole_arns) > 0 ? [1] : []
+    content {
+      sid       = "AllowPassAdditionalRolesToApprovedServices"
+      effect    = "Allow"
+      actions   = ["iam:PassRole"]
+      resources = var.ai_copilot_developer_allowed_passrole_arns
+
+      condition {
+        test     = "StringEquals"
+        variable = "iam:PassedToService"
+        values   = var.ai_copilot_developer_allowed_passrole_services
+      }
     }
   }
 
@@ -133,6 +150,27 @@ data "aws_iam_policy_document" "ai_copilot_developer_iam_permissions_guardrail" 
       "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:role/${var.ai_copilot_developer_role_prefix}*"
     ]
   }
+
+  # Allow Instance Profile Management For Dev App Roles
+  statement {
+    sid    = "AllowInstanceProfileManagementForDevAppRoles"
+    effect = "Allow"
+    actions = [
+      "iam:CreateInstanceProfile",
+      "iam:DeleteInstanceProfile",
+      "iam:AddRoleToInstanceProfile",
+      "iam:RemoveRoleFromInstanceProfile",
+      "iam:GetInstanceProfile",
+      "iam:ListInstanceProfiles",
+      "iam:ListInstanceProfilesForRole",
+      "iam:ListInstanceProfileTags",
+      "iam:TagInstanceProfile",
+      "iam:UntagInstanceProfile"
+    ]
+    resources = [
+      "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:instance-profile/${var.ai_copilot_developer_role_prefix}*"
+    ]
+  }
 }
 
 # Create the IAM Policy
@@ -144,4 +182,8 @@ resource "aws_iam_policy" "ai_copilot_developer_iam_permissions_guardrail" {
   path        = "/"
 
   policy = data.aws_iam_policy_document.ai_copilot_developer_iam_permissions_guardrail[0].json
+
+  lifecycle {
+    ignore_changes = [description]
+  }
 }
