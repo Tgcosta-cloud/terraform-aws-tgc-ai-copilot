@@ -94,6 +94,25 @@ data "aws_iam_policy_document" "ai_copilot_developer_iam_permissions_guardrail" 
     }
   }
 
+ # Allow Attach/Detach AmazonSSMManagedInstanceCore To Dev App Roles
+  statement {
+    sid    = "AllowAttachSSMManagedPolicyToDevAppRoles"
+    effect = "Allow"
+    actions = [
+      "iam:AttachRolePolicy",
+      "iam:DetachRolePolicy"
+    ]
+    resources = [
+      "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:role/${var.ai_copilot_developer_role_prefix}*"
+    ]
+
+    condition {
+      test     = "ArnEquals"
+      variable = "iam:PolicyARN"
+      values   = ["arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"]
+    }
+  }
+  
   # Allow Pass Dev App Roles To Approved Services Only
   statement {
     sid     = "AllowPassDevAppRolesToApprovedServicesOnly"

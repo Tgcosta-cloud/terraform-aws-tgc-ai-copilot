@@ -88,7 +88,9 @@ variable "ai_copilot_developer_allowed_passrole_services" {
   type        = list(string)
   default = [
     "lambda.amazonaws.com",
-    "ecs-tasks.amazonaws.com"
+    "ecs-tasks.amazonaws.com",
+    "ecs.amazonaws.com",
+    "ec2.amazonaws.com"
   ]
 }
 
